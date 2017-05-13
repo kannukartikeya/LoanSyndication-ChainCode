@@ -166,13 +166,7 @@ func GetCertAttribute(stub shim.ChaincodeStubInterface, attributeName string) (s
 
 func (t *SampleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	if function == "CreateLoanApplication" {
-		username, _ := GetCertAttribute(stub, "username")
-		role, _ := GetCertAttribute(stub, "role")
-		if role == "Bank_Home_Loan_Admin" {
 			return CreateLoanApplication(stub, args)
-		} else {
-			return nil, errors.New(username + " with role " + role + " does not have access to create a loan application")
-		}
 
 	}
 	return nil, nil
