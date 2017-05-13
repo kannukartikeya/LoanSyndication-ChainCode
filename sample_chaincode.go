@@ -74,9 +74,15 @@ func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]b
 	}
 
 	var loanApplicationId = args[0]
-	var loanApplicationInput = args[1]
+	var loanApplicationInput LoanApplication
+	loanApplicationInput = LoanApplication{ID:"ID1",PropertyId:"prop1",LandId:"land1"}
+	bytes, err1 := json.Marshal (&loanApplicationInput)
+	 if err1 != nil {
+		         fmt.Println("Could not marshal personal info object", err1)
+			         return nil, err1
+				  }
 
-	err := stub.PutState(loanApplicationId, []byte(loanApplicationInput))
+	err := stub.PutState(loanApplicationId, bytes )
 	if err != nil {
 		logger.Error("Could not save loan application to ledger", err)
 		return nil, err
