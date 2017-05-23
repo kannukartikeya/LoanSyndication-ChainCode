@@ -85,6 +85,7 @@ func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]b
 
 	var loanApplicationId = args[0]
 	var loanApplicationInput = args[1]
+	loanApplicationInput = LoanApplication{ID:"ID1",PropertyId:"prop1",LandId:"land1"}
 	//TODO: Include schema validation here
 
 	err := stub.PutState(loanApplicationId, []byte(loanApplicationInput))
