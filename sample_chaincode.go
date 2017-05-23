@@ -76,28 +76,38 @@ func GetLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]byte
 }
 
 func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	fmt.Println("Entering CreateLoanApplication")
+	logger.Debug("Entering CreateLoanApplication")
 
 	if len(args) < 2 {
-		fmt.Println("Invalid number of args")
+		logger.Error("Invalid number of args")
 		return nil, errors.New("Expected atleast two arguments for loan application creation")
 	}
 
 	var loanApplicationId = args[0]
-	var loanApplicationInput = args[1]
+	var loanApplicationInput LoanApplication
 	loanApplicationInput = LoanApplication{ID:"ID1",PropertyId:"prop1",LandId:"land1"}
-	//TODO: Include schema validation here
+	bytes, err1 := json.Marshal (&loanApplicationInput)
+	 if err1 != nil {
+		         fmt.Println("Could not marshal personal info object", err1)
+			         return nil, err1
+				  }
 
-	err := stub.PutState(loanApplicationId, []byte(loanApplicationInput))
+	err := stub.PutState(loanApplicationId, bytes )
 	if err != nil {
-		fmt.Println("Could not save loan application to ledger", err)
+		logger.Error("Could not save loan application to ledger", err)
 		return nil, err
-		}
+	}
 
-	fmt.Println("Successfully saved loan application")
-	return []byte(loanApplicationInput), nil
+	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
+	err = stub.SetEvent("evtSender", []byte(customEvent))
+	if err != nil {
+		return nil, err
+	}
+	logger.Info("Successfully saved loan application")
+	return bytes, nil
 
 }
+
 
 func NonDeterministicFunction(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	fmt.Println("Entering NonDeterministicFunction")
