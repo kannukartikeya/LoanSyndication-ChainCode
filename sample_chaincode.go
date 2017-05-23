@@ -1,20 +1,22 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-
-	"encoding/json"
+	"math/rand"
+	"strconv"
+	"time"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
+
 
 var logger = shim.NewLogger("mylogger")
 
 type SampleChaincode struct {
 }
 
-//custom data models
 type PersonalInfo struct {
 	Firstname string `json:"firstname"`
 	Lastname  string `json:"lastname"`
@@ -48,6 +50,14 @@ type LoanApplication struct {
 	LastModifiedDate       string        `json:"lastModifiedDate"`
 }
 
+type Participant struct {
+	ID                     string        `json:"id"`
+	Name                   string        `json:"name"`
+	AssetId								 string        `json:"loanId"`
+  SharePerCent           int           `json:"share"`
+	ShareAmount            int 					 `json:"shareAmount"`
+}
+
 func GetLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	logger.Debug("Entering GetLoanApplication")
 
@@ -66,81 +76,54 @@ func GetLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]byte
 }
 
 func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	logger.Debug("Entering CreateLoanApplication")
+	fmt.Println("Entering CreateLoanApplication")
 
 	if len(args) < 2 {
-		logger.Error("Invalid number of args")
+		fmt.Println("Invalid number of args")
 		return nil, errors.New("Expected atleast two arguments for loan application creation")
 	}
 
 	var loanApplicationId = args[0]
-	var loanApplicationInput LoanApplication
-	loanApplicationInput = LoanApplication{ID:"ID1",PropertyId:"prop1",LandId:"land1"}
-	bytes, err1 := json.Marshal (&loanApplicationInput)
-	 if err1 != nil {
-		         fmt.Println("Could not marshal personal info object", err1)
-			         return nil, err1
-				  }
+	var loanApplicationInput = args[1]
+	//TODO: Include schema validation here
 
-	err := stub.PutState(loanApplicationId, bytes )
+	err := stub.PutState(loanApplicationId, []byte(loanApplicationInput))
 	if err != nil {
-		logger.Error("Could not save loan application to ledger", err)
+		fmt.Println("Could not save loan application to ledger", err)
 		return nil, err
-	}
+		}
 
-	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
-	err = stub.SetEvent("evtSender", []byte(customEvent))
-	if err != nil {
-		return nil, err
-	}
-	logger.Info("Successfully saved loan application")
-	return nil, nil
+	fmt.Println("Successfully saved loan application")
+	return []byte(loanApplicationInput), nil
 
 }
 
-/**
-Updates the status of the loan application
-**/
-func UpdateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	logger.Debug("Entering UpdateLoanApplication")
-
-	if len(args) < 2 {
-		logger.Error("Invalid number of args")
-		return nil, errors.New("Expected atleast two arguments for loan application update")
-	}
-
-	var loanApplicationId = args[0]
-	var status = args[1]
-
-	laBytes, err := stub.GetState(loanApplicationId)
+func NonDeterministicFunction(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	fmt.Println("Entering NonDeterministicFunction")
+	//Use random number generator to generate the ID
+	var random = rand.New(rand.NewSource(time.Now().UnixNano()))
+	var loanApplicationID = "la1" + strconv.Itoa(random.Intn(1000))
+	var loanApplication = args[0]
+	var la LoanApplication
+	err := json.Unmarshal([]byte(loanApplication), &la)
 	if err != nil {
-		logger.Error("Could not fetch loan application from ledger", err)
+		fmt.Println("Could not unmarshal loan application", err)
 		return nil, err
 	}
-	var loanApplication LoanApplication
-	err = json.Unmarshal(laBytes, &loanApplication)
-	loanApplication.Status = status
-
-	laBytes, err = json.Marshal(&loanApplication)
+	la.ID = loanApplicationID
+	laBytes, err := json.Marshal(&la)
 	if err != nil {
-		logger.Error("Could not marshal loan application post update", err)
+		fmt.Println("Could not marshal loan application", err)
+		return nil, err
+	}
+	err = stub.PutState(loanApplicationID, laBytes)
+	if err != nil {
+		fmt.Println("Could not save loan application to ledger", err)
 		return nil, err
 	}
 
-	err = stub.PutState(loanApplicationId, laBytes)
-	if err != nil {
-		logger.Error("Could not save loan application post update", err)
-		return nil, err
-	}
-
-	var customEvent = "{eventType: 'loanApplicationUpdate', description:" + loanApplicationId + "' Successfully updated status'}"
-	err = stub.SetEvent("evtSender", []byte(customEvent))
-	if err != nil {
-		return nil, err
-	}
-	logger.Info("Successfully updated loan application")
-	return nil, nil
-
+	fmt.Println("Successfully saved loan application")
+	return []byte(loanApplicationID), nil
 }
 
 func (t *SampleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
@@ -148,33 +131,25 @@ func (t *SampleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 func (t *SampleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	if function == "GetLoanApplication" {
-		return GetLoanApplication(stub, args)
-	}
 	return nil, nil
-}
-
-func GetCertAttribute(stub shim.ChaincodeStubInterface, attributeName string) (string, error) {
-	logger.Debug("Entering GetCertAttribute")
-	attr, err := stub.ReadCertAttribute(attributeName)
-	if err != nil {
-		return "", errors.New("Couldn't get attribute " + attributeName + ". Error: " + err.Error())
-	}
-	attrString := string(attr)
-	return attrString, nil
 }
 
 func (t *SampleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	if function == "CreateLoanApplication" {
-			return CreateLoanApplication(stub, args)
+	fmt.Println("Entering Invoke")
 
+	ubytes, _ := stub.ReadCertAttribute("username")
+	rbytes, _ := stub.ReadCertAttribute("role")
+
+	username := string(ubytes)
+	role := string(rbytes)
+
+	if role != "Bank_Admin" {
+		return nil, errors.New("caller with " + username + " and role " + role + " does not have access to invoke CreateLoanApplication")
 	}
-	return nil, nil
-}
-
-type customEvent struct {
-	Type       string `json:"type"`
-	Decription string `json:"description"`
+	if function == "CreateLoanApplication" {
+		return CreateLoanApplication(stub, args)
+	}
+	return nil, errors.New("Invalid function name")
 }
 
 func main() {
@@ -193,3 +168,5 @@ func main() {
 	}
 
 }
+
+
