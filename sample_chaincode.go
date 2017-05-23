@@ -134,23 +134,49 @@ func (t *SampleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	return nil, nil
 }
 
-func (t *SampleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	fmt.Println("Entering Invoke")
 
-	ubytes, _ := stub.ReadCertAttribute("username")
-	rbytes, _ := stub.ReadCertAttribute("role")
-
-	username := string(ubytes)
-	role := string(rbytes)
-
-	if role != "Bank_Admin" {
-		return nil, errors.New("caller with " + username + " and role " + role + " does not have access to invoke CreateLoanApplication")
+func GetCertAttribute(stub shim.ChaincodeStubInterface, attributeName string) (string, error) {
+	logger.Debug("Entering GetCertAttribute")
+	attr, err := stub.ReadCertAttribute(attributeName)
+	if err != nil {
+		return "", errors.New("Couldn't get attribute " + attributeName + ". Error: " + err.Error())
 	}
+	attrString := string(attr)
+	return attrString, nil
+}
+
+
+func (t *SampleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	if function == "CreateLoanApplication" {
-		return CreateLoanApplication(stub, args)
+		username, _ := GetCertAttribute(stub, "username")
+		role, _ := GetCertAttribute(stub, "role")
+		if role == "Bank_Admin" {
+			return CreateLoanApplication(stub, args)
+		} else {
+			return nil, errors.New(username + " with role " + role + " does not have access to create a loan application")
+		}
+
 	}
 	return nil, errors.New("Invalid function name")
 }
+
+
+
+/*func (t *SampleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	if function == "CreateLoanApplication" {
+		username, _ := GetCertAttribute(stub, "username")
+		role, _ := GetCertAttribute(stub, "role")
+		if role == "Bank_Home_Loan_Admin" {
+			return CreateLoanApplication(stub, args)
+		} else {
+			return nil, errors.New(username + " with role " + role + " does not have access to create a loan application")
+		}
+
+	}
+	return nil, nil
+}*/
+
+
 
 func main() {
 
