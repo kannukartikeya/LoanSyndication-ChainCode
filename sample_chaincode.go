@@ -85,7 +85,7 @@ func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]b
 
 	var loanApplicationId = args[0]
 	var loanApplicationInput LoanApplication
-	loanApplicationInput = LoanApplication{ID:"ID1",PropertyId:"prop1",LandId:"land1"}
+	loanApplicationInput = LoanApplication{ID:loanApplicationId,PropertyId:"prop1",LandId:"land1",ApprovedAmount:1000}
 	bytes, err1 := json.Marshal (&loanApplicationInput)
 	 if err1 != nil {
 		         fmt.Println("Could not marshal personal info object", err1)
