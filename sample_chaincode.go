@@ -75,6 +75,26 @@ func GetLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]byte
 	return bytes, nil
 }
 
+
+
+func GetLoanParticipant(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	logger.Debug("Entering GetLoanParticipant")
+
+	if len(args) < 1 {
+		logger.Error("Invalid number of arguments")
+		return nil, errors.New("Missing participant ID")
+	}
+
+	var participantID = args[0]
+	bytes, err := stub.GetState(participantID)
+	if err != nil {
+		logger.Error("Could not fetch participant with id "+participantID+" from ledger", err)
+		return nil, err
+	}
+	return bytes, nil
+}
+
+
 func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	logger.Debug("Entering CreateLoanApplication")
 
@@ -97,6 +117,24 @@ func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]b
 		logger.Error("Could not save loan application to ledger", err)
 		return nil, err
 	}
+
+	partbytes, err := stub.GetState("part1")
+	if err != nil {
+		logger.Error("Could not fetch firstParticipant with id part1 from ledger", err)
+		return nil, err
+	}
+
+ var firstParticipant Participant
+ err = json.Unmarshal(partbytes,&firstParticipant)
+ fmt.Println(firstParticipant.Name)
+ firstParticipant.ShareAmount = loanApplicationInput.ApprovedAmount *  firstParticipant.SharePerCent
+
+ partbytes2, err := json.Marshal (&firstParticipant)
+ if err != nil {
+        fmt.Println("Could not marshal firstParticipant info object", err)
+        return nil, err
+ }
+ err = stub.PutState("part1", partbytes2)
 
 	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
 	err = stub.SetEvent("evtSender", []byte(customEvent))
@@ -136,14 +174,39 @@ func NonDeterministicFunction(stub shim.ChaincodeStubInterface, args []string) (
 	fmt.Println("Successfully saved loan application")
 	return []byte(loanApplicationID), nil
 }
-
+//resets all the things
 func (t *SampleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	if len(args)!=1 {
+				return nil,errors.New("Incorrect number of arguments. Expecting 1")
+	}
+
+	var firstParticipant Participant
+	//var secondParticipant Participant
+
+	firstParticipant = Participant{ID:"part1",Name:"DeucheBank",SharePerCent:80}
+	//secondParticipant = Participant{ID:"part2",Name:"CITIBank",SharePerCent:20}
+
+	bytes, err1 := json.Marshal (&firstParticipant)
+	 if err1 != nil {
+		         fmt.Println("Could not marshal firstParticipant object", err1)
+			         return nil, err1
+				  }
+
+	err := stub.PutState("part1", bytes )
+	if err != nil {
+			logger.Error("Could not save firstParticipant to ledger", err)
+			return nil, err
+		}
+
 	return nil, nil
 }
 
 func (t *SampleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	if function == "GetLoanApplication" {
 		return GetLoanApplication(stub, args)
+	}
+	if function == "GetLoanParticipant" {
+		return GetLoanParticipant(stub, args)
 	}
 	return nil, nil
 }
