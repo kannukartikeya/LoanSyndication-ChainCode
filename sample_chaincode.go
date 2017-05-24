@@ -142,6 +142,9 @@ func (t *SampleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 func (t *SampleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	if function == "GetLoanApplication" {
+		return GetLoanApplication(stub, args)
+	}
 	return nil, nil
 }
 
