@@ -104,7 +104,9 @@ func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]b
 	}
 
 	var loanApplicationId = args[0]
-	var loanApplicationInput LoanApplication
+	
+	
+	/*var loanApplicationInput LoanApplication
 	loanApplicationInput = LoanApplication{ID:loanApplicationId,PropertyId:"prop1",LandId:"land1",ApprovedAmount:1000}
 	bytes, err1 := json.Marshal (&loanApplicationInput)
 	 if err1 != nil {
@@ -112,7 +114,12 @@ func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]b
 			         return nil, err1
 				  }
 
-	err := stub.PutState(loanApplicationId, bytes )
+	err := stub.PutState(loanApplicationId, bytes )*/
+	
+	
+	var loanApplicationInput = args[1]
+
+	err := stub.PutState(loanApplicationId, []byte(loanApplicationInput))
 	if err != nil {
 		logger.Error("Could not save loan application to ledger", err)
 		return nil, err
@@ -127,7 +134,10 @@ func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]b
  var firstParticipant Participant
  err = json.Unmarshal(partbytes,&firstParticipant)
  fmt.Println(firstParticipant.Name)
- firstParticipant.ShareAmount = loanApplicationInput.ApprovedAmount *  firstParticipant.SharePerCent
+ 
+ //firstParticipant.ShareAmount = loanApplicationInput.ApprovedAmount *  firstParticipant.SharePerCent
+ 
+ firstParticipant.ShareAmount = 1000 *  firstParticipant.SharePerCent
 
  partbytes2, err := json.Marshal (&firstParticipant)
  if err != nil {
@@ -142,7 +152,7 @@ func CreateLoanApplication(stub shim.ChaincodeStubInterface, args []string) ([]b
 		return nil, err
 	}
 	logger.Info("Successfully saved loan application")
-	return bytes, nil
+	return partbytes2, nil
 
 }
 
