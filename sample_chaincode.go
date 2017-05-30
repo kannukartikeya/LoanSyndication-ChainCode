@@ -415,11 +415,14 @@ func (t *SampleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 func (t *SampleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	if function == "GetLoanApplication" {
 		return GetLoanApplication(stub, args)
-	}
-	if function == "GetLoanParticipant" {
+	} else if function == "GetLoanParticipant" {
 		return GetLoanParticipant(stub, args)
+	} else if (function == "GetParticipatedLoans"){
+		return GetParticipatedLoans(stub, args)
+	}else {
+		return nil, errors.New("Invalid function name")
 	}
-	return nil, nil
+	
 }
 
 
@@ -447,9 +450,7 @@ func (t *SampleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 
 	} else if (function == "SettleLoanSyndication") {
 		return SettleLoanSyndication(stub, args)
-	} else if (function == "GetParticipatedLoans"){
-		return GetParticipatedLoans(stub, args)
-	}else {
+	} else {
 		return nil, errors.New("Invalid function name")
 	}
 }
