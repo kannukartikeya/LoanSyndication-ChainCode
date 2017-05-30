@@ -9,10 +9,11 @@ import (
 )
 
 var loanApplicationID = "la1"
-var loanApplication = `{"id":"` + loanApplicationID + `","propertyId":"prop1","landId":"land1","permitId":"permit1","buyerId":"vojha24","personalInfo":{"firstname":"Varun","lastname":"Ojha","dob":"dob","email":"varun@gmail.com","mobile":"99999999"},"financialInfo":{"monthlySalary":16000,"otherExpenditure":0,"monthlyRent":4150,"monthlyLoanPayment":4000},"status":"Submitted","requestedAmount":40000,"fairMarketValue":58000,"approvedAmount":40000,"reviewedBy":"bond","lastModifiedDate":"21/09/2016 2:30pm"}`
+var loanApplicationID2 = "la2"
+var loanApplication = `{"id":"` + loanApplicationID + `","propertyId":"prop1","landId":"land1","permitId":"permit1","buyerId":"kartikeya","personalInfo":{"firstname":"Kartikeya","lastname":"Gupta","dob":"dob","email":"kartikeya80@gmail.com","mobile":"99999999"},"financialInfo":{"monthlySalary":16000,"otherExpenditure":0,"monthlyRent":4150,"monthlyLoanPayment":4000},"status":"Submitted","requestedAmount":40000,"fairMarketValue":58000,"approvedAmount":40000,"reviewedBy":"bond","lastModifiedDate":"21/09/2016 2:30pm"}`
 
-// func TestCreateLoanApplication(t *testing.T) {
-// 	fmt.Println("Entering TestCreateLoanApplication")
+// func CreateLoanParticipation(t *testing.T) {
+// 	fmt.Println("Entering CreateLoanParticipation")
 // 	m := make(map[string][]byte)
 // 	m["role"] = []byte("Bank")
 // 	stub := NewMockStub("mockStub", new(SampleChaincode), m)
@@ -41,9 +42,9 @@ func TestCrtLoanAppWithNullArguments(t *testing.T) {
 	}
 
 	stub.MockTransactionStart("t123")
-	_, err := CreateLoanApplication(stub, []string{})
+	_, err := CreateLoanParticipation(stub, []string{})
 	if err == nil {
-		t.Fatalf("Expected CreateLoanApplication to return validation error")
+		t.Fatalf("Expected CreateLoanParticipation to return validation error")
 	}
 	stub.MockTransactionEnd("t123")
 
@@ -58,13 +59,84 @@ func TestCrtLoanAppWithIdLoanDetails(t *testing.T) {
 	}
 
 	stub.MockTransactionStart("t123")
-	_, err := CreateLoanApplication(stub, []string{loanApplicationID, loanApplication})
+	_, err := CreateLoanParticipation(stub, []string{loanApplicationID, loanApplication})
 	if err != nil {
-		t.Fatalf("Expected CreateLoanApplication to succeed")
+		t.Fatalf("Expected CreateLoanParticipation to succeed")
 	}
 	stub.MockTransactionEnd("t123")
 
 }
+
+func TestCreateFetchParticipants(t *testing.T) {
+	fmt.Println("Entering TestCreateFetchParticipants")
+	attributes := make(map[string][]byte)
+	stub := shim.NewCustomMockStub("mockStub", new(SampleChaincode), attributes)
+	if stub == nil {
+		t.Fatalf("MockStub creation failed")
+	}
+
+	stub.MockTransactionStart("t123")
+	_, err := CreateParticipants(stub, []string{"part1"})
+	if err != nil {
+		t.Fatalf("Expected CreateParticipants to succeed")
+	}
+	stub.MockTransactionEnd("t123")
+
+fmt.Println("Created and Fetching Participants")
+var firstParticipant Participant
+bytes, err := GetLoanParticipant(stub, []string{"part1"})
+
+
+	err = json.Unmarshal(bytes, &firstParticipant)
+	if err != nil {
+		t.Fatalf("Could not unmarshal loan application with ID " + "part1")
+	}
+	fmt.Println("Participant Name :" + firstParticipant.Name)
+//fmt.Println("Participated Asset ID :" + firstParticipant.AssetList[0].AssetId)
+}
+	
+func TestGetParticipatedLoans(t *testing.T){
+	
+	fmt.Println("Entering TestGetParticipatedLoans")
+
+	attributes := make(map[string][]byte)
+	attributes["username"] = []byte("vojha24")
+	attributes["role"] = []byte("client")
+
+	stub := shim.NewCustomMockStub("mockStub", new(SampleChaincode), attributes)
+	if stub == nil {
+		t.Fatalf("MockStub creation failed")
+	}
+
+	_, err := stub.MockInvoke("t123", "CreateLoanParticipation", []string{loanApplicationID, loanApplication})
+	if err != nil {
+		fmt.Println(err)
+		t.Fatalf("Expected CreateLoanParticipation to be invoked")
+	}
+	
+	_, err = stub.MockInvoke("t123", "CreateLoanParticipation", []string{loanApplicationID2, loanApplication})
+	if err != nil {
+		fmt.Println(err)
+		t.Fatalf("Expected CreateLoanParticipation to be invoked")
+	}
+
+	loanbytes2, err1 := stub.MockInvoke("t123", "GetParticipatedLoans", []string{})
+	if err1 == nil {
+		//t.Fatalf("Expected unauthorized user error to be returned")
+	}
+	var loanList []LoanApplication
+	if (loanbytes2 != nil) {
+		err = json.Unmarshal(loanbytes2,&loanList)
+		if err != nil {
+			logger.Error("unable to unmarshall loanlist")
+		
+		}
+	}
+	
+	fmt.Println("LoanList length is", len(loanList))
+}
+
+
 
 func TestCrtFetchLoanAppAndValidateInputStoredVal(t *testing.T) {
 	fmt.Println("Entering TestCrtFetchLoanAppAndValidateInputStoredVal")
@@ -75,7 +147,7 @@ func TestCrtFetchLoanAppAndValidateInputStoredVal(t *testing.T) {
 	}
 
 	stub.MockTransactionStart("t123")
-	CreateLoanApplication(stub, []string{loanApplicationID, loanApplication})
+	CreateLoanParticipation(stub, []string{loanApplicationID, loanApplication})
 	stub.MockTransactionEnd("t123")
 
 	var la LoanApplication
@@ -122,15 +194,15 @@ func TestInvokeCrtLoanAppWithUnAuthorizedUser(t *testing.T) {
 		t.Fatalf("MockStub creation failed")
 	}
 
-	_, err := stub.MockInvoke("t123", "CreateLoanApplication", []string{loanApplicationID, loanApplication})
+	_, err := stub.MockInvoke("t123", "CreateLoanParticipation", []string{loanApplicationID, loanApplication})
 	if err == nil {
 		//t.Fatalf("Expected unauthorized user error to be returned")
 	}
 
 }
 
-func TestInvokeCrtLoanAppWithAuthorizedRole(t *testing.T) {
-	fmt.Println("Entering TestInvokeCrtLoanAppWithAuthorizedRole")
+func TestInvokeCrtSttleLoanSyndWithAuthorizedRole(t *testing.T) {
+	fmt.Println("Entering TestInvokeCrtSttleLoanSyndWithAuthorizedRole")
 
 	attributes := make(map[string][]byte)
 	attributes["username"] = []byte("vojha24")
@@ -141,11 +213,67 @@ func TestInvokeCrtLoanAppWithAuthorizedRole(t *testing.T) {
 		t.Fatalf("MockStub creation failed")
 	}
 
-	_, err := stub.MockInvoke("t123", "CreateLoanApplication", []string{loanApplicationID, loanApplication})
+	stub.MockTransactionStart("t123")
+	_, err := CreateParticipants(stub, []string{"part1"})
+	if err != nil {
+		t.Fatalf("Expected CreateParticipants to succeed")
+	}
+	stub.MockTransactionEnd("t123")
+
+	_, err = stub.MockInvoke("t123", "CreateLoanParticipation", []string{loanApplicationID, loanApplication})
 	if err != nil {
 		fmt.Println(err)
-		t.Fatalf("Expected CreateLoanApplication to be invoked")
+		t.Fatalf("Expected CreateLoanParticipation to be invoked")
 	}
+
+	fmt.Println("Fetching Participant")
+	var firstParticipant Participant
+	bytes, err := GetLoanParticipant(stub, []string{"part1"})
+	if err != nil {
+		fmt.Println(err)
+		t.Fatalf("Expected GetLoanParticipant to be invoked successfully")
+	}
+		err = json.Unmarshal(bytes, &firstParticipant)
+		if err != nil {
+			t.Fatalf("Could not unmarshal firstParticipant" + firstParticipant.ID)
+		}
+		if(firstParticipant.AssetList != nil){
+		fmt.Println("Participant Details :" + firstParticipant.AssetList[0].AssetId)
+		fmt.Println("Participant Share Amount After Participation", firstParticipant.AssetList[0].ShareAmount)
+	
+		}
+
+		_, err = stub.MockInvoke("t123", "SettleLoanSyndication", []string{loanApplicationID, "1000"})
+		if err != nil {
+			fmt.Println(err)
+			t.Fatalf("Expected SettleLoanSyndication to be invoked")
+		}
+
+		var la LoanApplication
+		bytes, err = GetLoanApplication(stub, []string{loanApplicationID})
+
+		err = json.Unmarshal(bytes, &la)
+		if err != nil {
+			t.Fatalf("Could not unmarshal loan application with ID " + loanApplicationID)
+		}
+
+	fmt.Println("Loan OutstandingSettlementAmount %d",la.OutStandingSettlementAmount)
+
+	bytes, err = GetLoanParticipant(stub, []string{"part1"})
+	if err != nil {
+		fmt.Println(err)
+		t.Fatalf("Expected GetLoanParticipant to be invoked successfully")
+	}
+		err = json.Unmarshal(bytes, &firstParticipant)
+		if err != nil {
+			t.Fatalf("Could not unmarshal firstParticipant" + firstParticipant.ID)
+		}
+		if(firstParticipant.AssetList != nil){
+		fmt.Println("Participated Asset ID : " + firstParticipant.AssetList[0].AssetId)
+		fmt.Println("Participant Reduced Share Amount Post Settlement", firstParticipant.AssetList[0].ShareAmount)
+		}
+
+	fmt.Println("Entering TestInvokeCrtSttleLoanSyndWithAuthorizedRole")
 
 }
 
@@ -168,7 +296,7 @@ func TestInvokeInValidFunction(t *testing.T) {
 
 }
 
-func TestInvokeCrtLoanAppAndFetchWithAuthorizedRole(t *testing.T) {
+/*func TestInvokeCrtLoanAppAndFetchWithAuthorizedRole(t *testing.T) {
 	fmt.Println("Entering TestInvokeFunctionValidation2")
 
 	attributes := make(map[string][]byte)
@@ -180,15 +308,15 @@ func TestInvokeCrtLoanAppAndFetchWithAuthorizedRole(t *testing.T) {
 		t.Fatalf("MockStub creation failed")
 	}
 
-	bytes, err := stub.MockInvoke("t123", "CreateLoanApplication", []string{loanApplicationID, loanApplication})
+	bytes, err := stub.MockInvoke("t123", "CreateLoanParticipation", []string{loanApplicationID, loanApplication})
 	if err != nil {
-		t.Fatalf("Expected CreateLoanApplication function to be invoked")
+		t.Fatalf("Expected CreateLoanParticipation function to be invoked")
 	}
-	//A spy could have been used here to ensure CreateLoanApplication method actually got invoked.
+	//A spy could have been used here to ensure CreateLoanParticipation method actually got invoked.
 	var la LoanApplication
 	err = json.Unmarshal(bytes, &la)
 	if err != nil {
-		t.Fatalf("Expected valid loan application JSON string to be returned from CreateLoanApplication method")
+		t.Fatalf("Expected valid loan application JSON string to be returned from CreateLoanParticipation method")
 	}
 
-}
+}*/
