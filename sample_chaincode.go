@@ -186,7 +186,7 @@ func CreateLoanParticipation(stub shim.ChaincodeStubInterface, args []string) ([
 
 	loanbytes2, err := AppendToLoanList(stub,participatedLoan)
 	    
-    //err = ParticipateLoan(stub, "part1",loanApplicationInput, participatedLoan.ApprovedAmount)
+    err = ParticipateLoan(stub, "part1",loanApplicationInput, participatedLoan.ApprovedAmount)
 
 	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
 	err = stub.SetEvent("evtSender", []byte(customEvent))
@@ -327,7 +327,7 @@ func SettleLoanSyndication(stub shim.ChaincodeStubInterface, args []string) ([]b
 		return nil, err
 	}
 
-	//err = SettleParticipation(stub,"part1",loanApplicationId,v)
+	err = SettleParticipation(stub,"part1",loanApplicationId,v)
 	
 	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
 	err = stub.SetEvent("evtSender", []byte(customEvent))
