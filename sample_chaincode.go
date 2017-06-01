@@ -313,7 +313,8 @@ func SettleLoanSyndication(stub shim.ChaincodeStubInterface, args []string) ([]b
 
 	fmt.Println("updating outStandingSettlentAmount for ID for amount " + loanSettlementAmount)
 
-	participatedLoan.OutStandingSettlementAmount = participatedLoan.ApprovedAmount - v
+	//participatedLoan.OutStandingSettlementAmount = participatedLoan.ApprovedAmount - v
+	participatedLoan.OutStandingSettlementAmount = participatedLoan.OutStandingSettlementAmount - v
 
 	laBytes, err := json.Marshal(&participatedLoan)
 	if err != nil {
