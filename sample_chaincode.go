@@ -187,7 +187,7 @@ func CreateLoanParticipation(stub shim.ChaincodeStubInterface, args []string) ([
 
 	loanbytes2, err := AppendToLoanList(stub,participatedLoan)
 	    
-    err = ParticipateLoan(stub, "part1",loanApplicationInput, participatedLoan.ApprovedAmount)
+    err = ParticipateLoan(stub, "part1",loanApplicationId, participatedLoan.ApprovedAmount)
 
 	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
 	err = stub.SetEvent("evtSender", []byte(customEvent))
