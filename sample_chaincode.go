@@ -65,7 +65,7 @@ type Asset struct{
 	SharePerCent           int           `json:"share"`
 	ShareAmount            int 					 `json:"shareAmount"`
 	SyndicatedAmount 			 int					 `json:"syndicatedAmount"`
-	SettlementFees		   int                     `json:settlementFees`
+	SettlementFees		   int                     `json:"settlementFees"`
 }
 
 
