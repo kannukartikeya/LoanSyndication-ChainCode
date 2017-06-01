@@ -65,6 +65,7 @@ type Asset struct{
 	SharePerCent           int           `json:"share"`
 	ShareAmount            int 					 `json:"shareAmount"`
 	SyndicatedAmount 			 int					 `json:"syndicatedAmount"`
+	SettlementFees		   int                     `json:settlementFees`
 }
 
 
@@ -251,9 +252,10 @@ func ParticipateLoan(stub shim.ChaincodeStubInterface, participant string, loan_
 	fmt.Println("firstParticipant Name" + firstParticipant.Name)
 
 	var newAsset Asset
-	newAsset.AssetId= loan_id
+	newAsset.AssetId = loan_id
 	newAsset.SharePerCent = 80
 	newAsset.ShareAmount = ( participationAmount * newAsset.SharePerCent / 100 )
+	newAsset.SettlementFees = 0
 	
 	firstParticipant.AssetList = append(firstParticipant.AssetList, newAsset)
 	
@@ -341,6 +343,7 @@ return nil,nil
 }
 
 func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, loan_id string , settlementAmount int) (error){
+	fmt.Println("Entering SettleParticipation")
 	partbytes, err := stub.GetState(participant)
 	if err != nil || partbytes == nil {
 		logger.Error("Could not fetch firstParticipant with id part1 from ledger", err)
@@ -349,13 +352,22 @@ func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, l
 
 	 var firstParticipant Participant
 	 err = json.Unmarshal(partbytes,&firstParticipant)
-	 fmt.Println("firstParticipant Name" + firstParticipant.Name)
+	 fmt.Println("SettleParticipation: firstParticipantName " + firstParticipant.Name)
 
-	for _, elem := range firstParticipant.AssetList {
-	fmt.Println("Participant Asset Details :" + elem.AssetId)
-	firstParticipant.AssetList[0].ShareAmount = firstParticipant.AssetList[0].ShareAmount - (firstParticipant.AssetList[0].SharePerCent*settlementAmount/100)
-	fmt.Println("Update Participant ShareAmount")
-	fmt.Println(firstParticipant.AssetList[0].ShareAmount)
+	for i, elem := range firstParticipant.AssetList {
+		fmt.Println("elem.AssetId" , firstParticipant.AssetList[i].AssetId)
+		fmt.Println("loan_id",loan_id)
+		if(elem.AssetId == loan_id){
+			fmt.Println("SettleParticipation:Participant Asset Details :" + elem.AssetId)
+			fmt.Println("SettleParticipation:Index value is :" , i )
+			var settlementPortion int
+			settlementPortion = firstParticipant.AssetList[i].SharePerCent*settlementAmount/100
+			fmt.Println("SettleParticipation:settlementPortion Portion :", settlementPortion)
+			firstParticipant.AssetList[0].ShareAmount = firstParticipant.AssetList[i].ShareAmount - settlementPortion
+			firstParticipant.AssetList[0].SettlementFees = firstParticipant.AssetList[i].SettlementFees + ((settlementPortion*30*10)/(100*365))
+			fmt.Println("SettleParticipation:Update Participant ShareAmount")
+			fmt.Println(firstParticipant.AssetList[i].ShareAmount)
+		}
 	}
 	partbytes2, err := json.Marshal (&firstParticipant)
 	if err != nil {
@@ -367,7 +379,7 @@ func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, l
        fmt.Println("Could not put updated firstParticipant in world state", err)
        return  err
 	 }
-	 
+	 	fmt.Println("Exiting SettleParticipation")
 	return nil
 }
 
