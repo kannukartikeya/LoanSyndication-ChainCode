@@ -354,17 +354,20 @@ func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, l
 	 err = json.Unmarshal(partbytes,&firstParticipant)
 	 fmt.Println("SettleParticipation: firstParticipantName " + firstParticipant.Name)
 
-	for i, elem := range firstParticipant.AssetList {
+	for i := range firstParticipant.AssetList {
 		fmt.Println("elem.AssetId" , firstParticipant.AssetList[i].AssetId)
 		fmt.Println("loan_id",loan_id)
-		if(elem.AssetId == loan_id){
-			fmt.Println("SettleParticipation:Participant Asset Details :" + elem.AssetId)
+		if(firstParticipant.AssetList[i].AssetId == loan_id){
+			fmt.Println("SettleParticipation:Participant Asset Details :" + firstParticipant.AssetList[i].AssetId)
 			fmt.Println("SettleParticipation:Index value is :" , i )
 			var settlementPortion int
 			settlementPortion = firstParticipant.AssetList[i].SharePerCent*settlementAmount/100
 			fmt.Println("SettleParticipation:settlementPortion Portion :", settlementPortion)
-			firstParticipant.AssetList[0].ShareAmount = firstParticipant.AssetList[i].ShareAmount - settlementPortion
-			firstParticipant.AssetList[0].SettlementFees = firstParticipant.AssetList[i].SettlementFees + ((settlementPortion*30*10)/(100*365))
+			var orginalShareAmt int
+			orginalShareAmt = firstParticipant.AssetList[i].ShareAmount
+			fmt.Println("SettleParticipation:orginalShareAmt" , orginalShareAmt)
+			firstParticipant.AssetList[i].ShareAmount = orginalShareAmt - settlementPortion
+			firstParticipant.AssetList[i].SettlementFees = firstParticipant.AssetList[i].SettlementFees + ((settlementPortion*30*10)/(100*365))
 			fmt.Println("SettleParticipation:Update Participant ShareAmount")
 			fmt.Println(firstParticipant.AssetList[i].ShareAmount)
 		}
