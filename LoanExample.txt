@@ -1,0 +1,32 @@
+/	`1/*`1l/*+
+
+	q2q
+	
+	
+		AssetId								 string        `json:"loanId"`
+  	SharePerCent           int           `json:"share"`
+		ShareAmount            int 					 `json:"shareAmount"`
+		SyndicatedAmount 	
+		
+		
+		Loan : 
+		Approved(Sydicated) Amount  =40000
+		LoanRate = 10%
+
+		
+		P1
+		SharePercent = 80 %
+		Share Amount = (40000* 80/100 )= 32000
+
+		S1 = Settlement Amount  = 1000		
+		
+		Loan : 
+		Syndicate Amount  =40000
+		OutStandingSettlementAmount = 39000
+		
+		P1
+		SharePercent = 80 %
+		Share Amount = 32000 - (1000*80/100) = 800 = 31200
+		Fees = 800*10/100 = 80
+		
+		https://www.altoros.com/blog/the-difference-with-blockchain/

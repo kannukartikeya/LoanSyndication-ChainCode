@@ -20,20 +20,24 @@ type SampleChaincode struct {
 type PersonalInfo struct {
 	Firstname string `json:"firstname"`
 	Lastname  string `json:"lastname"`
-	DOB       string `json:"DOB"`
+	address       string `json:"address"`
 	Email     string `json:"email"`
-	Mobile    string `json:"mobile"`
+	contact    string `json:"contact"`
 }
 
 type FinancialInfo struct {
-	MonthlySalary      int `json:"monthlySalary"`
-	MonthlyRent        int `json:"monthlyRent"`
-	OtherExpenditure   int `json:"otherExpenditure"`
-	MonthlyLoanPayment int `json:"monthlyLoanPayment"`
+	spRating      string `json:"spRating"`
+	moodyRating        string `json:"moodyRating"`
+	dcr   			   int `json:"dcr"`
+	turnover	   int `json:"monthlyLoanPayment"`
 }
 
 type LoanApplication struct {
 	ID                     string        `json:"id"`
+	dealtype			   string 		 `json:"dealtype"`
+	baseRateType		   string        `json:"baseRateType"`
+	allInRate			   int			 `json:"allInRate"`
+	spread				   int			 `json:"spread"`
 	PropertyId             string        `json:"propertyId"`
 	LandId                 string        `json:"landId"`
 	PermitId               string        `json:"permitId"`
@@ -46,6 +50,7 @@ type LoanApplication struct {
 	RequestedAmount        int           `json:"requestedAmount"`
 	FairMarketValue        int           `json:"fairMarketValue"`
 	ApprovedAmount         int           `json:"approvedAmount"`
+	DealAmount         int          	 `json:"dealAmount"`
 	OutStandingSettlementAmount      int `json:"outstandingSettlementAmount"`
 	ReviewerId             string        `json:"reviewerId"`
 	LastModifiedDate       string        `json:"lastModifiedDate"`
@@ -182,12 +187,12 @@ func CreateLoanParticipation(stub shim.ChaincodeStubInterface, args []string) ([
 	if err != nil {
 		return nil, err
 	}
-    fmt.Println("participatedLoan ID and amount " + participatedLoan.ID, participatedLoan.ApprovedAmount)
+    fmt.Println("CreateLoanParticipation : ParticipatedLoan ID and amount " + participatedLoan.ID, participatedLoan.DealAmount)
     
 
 	loanbytes2, err := AppendToLoanList(stub,participatedLoan)
 	    
-    err = ParticipateLoan(stub, "part1",loanApplicationId, participatedLoan.ApprovedAmount)
+    err = ParticipateLoan(stub, "part1",loanApplicationId, participatedLoan.DealAmount)
 
 	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
 	err = stub.SetEvent("evtSender", []byte(customEvent))
@@ -249,7 +254,8 @@ func ParticipateLoan(stub shim.ChaincodeStubInterface, participant string, loan_
 	if err != nil {
 		return err
 	}
-	fmt.Println("firstParticipant Name" + firstParticipant.Name)
+	fmt.Println("ParticipateLoan: firstParticipant Name" + firstParticipant.Name)
+	fmt.Println("ParticipateLoan: participationAmount" ,participationAmount)
 
 	var newAsset Asset
 	newAsset.AssetId = loan_id
@@ -311,7 +317,7 @@ func SettleLoanSyndication(stub shim.ChaincodeStubInterface, args []string) ([]b
 
 	var participatedLoan LoanApplication
     err = json.Unmarshal(bytes,&participatedLoan)
-    fmt.Println("participatedLoan ID and amount " + participatedLoan.ID, participatedLoan.ApprovedAmount)
+    fmt.Println("participatedLoan ID and amount " + participatedLoan.ID, participatedLoan.DealAmount)
 
 	fmt.Println("updating outStandingSettlentAmount for ID for amount " + loanSettlementAmount)
 
@@ -366,8 +372,9 @@ func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, l
 			var orginalShareAmt int
 			orginalShareAmt = firstParticipant.AssetList[i].ShareAmount
 			fmt.Println("SettleParticipation:orginalShareAmt" , orginalShareAmt)
+			firstParticipant.AssetList[i].SettlementFees = firstParticipant.AssetList[i].SettlementFees + ((orginalShareAmt*30*10)/(100*365))
 			firstParticipant.AssetList[i].ShareAmount = orginalShareAmt - settlementPortion
-			firstParticipant.AssetList[i].SettlementFees = firstParticipant.AssetList[i].SettlementFees + ((settlementPortion*30*10)/(100*365))
+			
 			fmt.Println("SettleParticipation:Update Participant ShareAmount")
 			fmt.Println(firstParticipant.AssetList[i].ShareAmount)
 		}

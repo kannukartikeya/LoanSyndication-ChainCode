@@ -10,7 +10,7 @@ import (
 
 var loanApplicationID = "la1"
 var loanApplicationID2 = "la2"
-var loanApplication = `{"id":"` + loanApplicationID + `","propertyId":"prop1","landId":"land1","permitId":"permit1","buyerId":"kartikeya","personalInfo":{"firstname":"Kartikeya","lastname":"Gupta","dob":"dob","email":"kartikeya80@gmail.com","mobile":"99999999"},"financialInfo":{"monthlySalary":16000,"otherExpenditure":0,"monthlyRent":4150,"monthlyLoanPayment":4000},"status":"Submitted","requestedAmount":40000,"fairMarketValue":58000,"approvedAmount":40000,"outstandingSettlementAmount":40000,"reviewedBy":"bond","lastModifiedDate":"21/09/2016 2:30pm"}`
+var loanApplication = `{"id":"` + loanApplicationID + `","propertyId":"prop1","landId":"land1","permitId":"permit1","buyerId":"kartikeya","personalInfo":{"firstname":"Kartikeya","lastname":"Gupta","dob":"dob","email":"kartikeya80@gmail.com","mobile":"99999999"},"financialInfo":{"spRating":"BBB+","moodyRating":"Baa2","dcr":1.9,"turnover":4000},"status":"Submitted","requestedAmount":40000,"fairMarketValue":58000,"approvedAmount":40000,"dealAmount":40000,"outstandingSettlementAmount":40000,"reviewedBy":"bond","lastModifiedDate":"21/09/2016 2:30pm"}`
 
 // func CreateLoanParticipation(t *testing.T) {
 // 	fmt.Println("Entering CreateLoanParticipation")
