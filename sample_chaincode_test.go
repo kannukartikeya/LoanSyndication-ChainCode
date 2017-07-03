@@ -10,7 +10,7 @@ import (
 
 var loanApplicationID = "la1"
 var loanApplicationID2 = "la2"
-var loanApplication = `{"id":"` + loanApplicationID + `","propertyId":"prop1","landId":"land1","permitId":"permit1","buyerId":"kartikeya","personalInfo":{"firstname":"Kartikeya","lastname":"Gupta","dob":"dob","email":"kartikeya80@gmail.com","mobile":"99999999"},"financialInfo":{"spRating":"BBB+","moodyRating":"Baa2","dcr":1.9,"turnover":4000},"status":"Submitted","requestedAmount":40000,"fairMarketValue":58000,"approvedAmount":40000,"dealAmount":40000,"outstandingSettlementAmount":40000,"reviewedBy":"bond","lastModifiedDate":"21/09/2016 2:30pm"}`
+var loanApplication = `{"id":"` + loanApplicationID + `","dealType":"Loan","baseRateType":"LIBOR","allInRate":5,"propertyId":"prop1","landId":"land1","permitId":"permit1","buyerId":"kartikeya","personalInfo":{"firstname":"Kartikeya","lastname":"Gupta","dob":"dob","email":"kartikeya80@gmail.com","mobile":"99999999"},"financialInfo":{"spRating":"BBB+","moodyRating":"Baa2","dcr":1.9,"turnover":4000},"status":"Submitted","requestedAmount":40000,"fairMarketValue":58000,"approvedAmount":40000,"dealAmount":40000,"outstandingSettlementAmount":40000,"reviewedBy":"bond","lastModifiedDate":"21/09/2016 2:30pm"}`
 
 // func CreateLoanParticipation(t *testing.T) {
 // 	fmt.Println("Entering CreateLoanParticipation")
@@ -82,17 +82,34 @@ func TestCreateFetchParticipants(t *testing.T) {
 	}
 	stub.MockTransactionEnd("t123")
 
-fmt.Println("Created and Fetching Participants")
+fmt.Println("Created and Fetching First Participant")
 var firstParticipant Participant
 bytes, err := GetLoanParticipant(stub, []string{"part1"})
 
 
 	err = json.Unmarshal(bytes, &firstParticipant)
 	if err != nil {
-		t.Fatalf("Could not unmarshal loan application with ID " + "part1")
+		t.Fatalf("Could not unmarshal participant with ID " + "part1")
 	}
+	fmt.Println("Participant ID :" + firstParticipant.ID)
 	fmt.Println("Participant Name :" + firstParticipant.Name)
+	fmt.Println("Participant SharePerCent :", firstParticipant.SharePerCent)
+	
 //fmt.Println("Participated Asset ID :" + firstParticipant.AssetList[0].AssetId)
+
+fmt.Println(" Fetching Second Participant")
+var secondParticipant Participant
+bytes2, err2 := GetLoanParticipant(stub, []string{"part2"})
+
+
+	err2 = json.Unmarshal(bytes2, &secondParticipant)
+	if err2 != nil {
+		t.Fatalf("Could not unmarshal participant with ID " + "part2")
+	}
+	fmt.Println("Participant ID :" + secondParticipant.ID)
+	fmt.Println("Participant Name :" + secondParticipant.Name)
+	fmt.Println("Participant SharePerCent :", secondParticipant.SharePerCent)
+
 }
 	
 func TestGetParticipatedLoans(t *testing.T){

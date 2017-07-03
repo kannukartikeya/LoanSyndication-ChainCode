@@ -29,15 +29,15 @@ type FinancialInfo struct {
 	spRating      string `json:"spRating"`
 	moodyRating        string `json:"moodyRating"`
 	dcr   			   int `json:"dcr"`
-	turnover	   int `json:"monthlyLoanPayment"`
+	turnover	   int `json:"turnover"`
 }
 
 type LoanApplication struct {
 	ID                     string        `json:"id"`
-	dealtype			   string 		 `json:"dealtype"`
-	baseRateType		   string        `json:"baseRateType"`
-	allInRate			   int			 `json:"allInRate"`
-	spread				   int			 `json:"spread"`
+	DealType			   string 		 `json:"dealType"`
+	BaseRateType		   string        `json:"baseRateType"`
+	AllInRate			   int			 `json:"allInRate"`
+	Spread				   int			 `json:"spread"`
 	PropertyId             string        `json:"propertyId"`
 	LandId                 string        `json:"landId"`
 	PermitId               string        `json:"permitId"`
@@ -63,11 +63,12 @@ type LoanList struct {
 type Participant struct {
 	ID                     string        `json:"id"`
 	Name                   string        `json:"name"`
+	SharePerCent           int           `json:"share"`
 	AssetList []Asset
 }
 type Asset struct{
 	AssetId								 string        `json:"loanId"`
-	SharePerCent           int           `json:"share"`
+	
 	ShareAmount            int 					 `json:"shareAmount"`
 	SyndicatedAmount 			 int					 `json:"syndicatedAmount"`
 	SettlementFees		   int                     `json:"settlementFees"`
@@ -134,7 +135,7 @@ func CreateParticipants(stub shim.ChaincodeStubInterface,args []string)([]byte,e
 	
 	var participantID = args[0]
 	
-	//var secondParticipant Participant
+	var secondParticipant Participant
 
 	/*secondParticipant = Participant{ID:"part1",Name:"DeucheBank",
 								AssetList: []Asset{
@@ -145,9 +146,9 @@ func CreateParticipants(stub shim.ChaincodeStubInterface,args []string)([]byte,e
 								},
 						}*/
 	
-	firstParticipant = Participant{ID:participantID ,Name:"DeucheBank"}
+	firstParticipant = Participant{ID:participantID ,Name:"DeucheBank",SharePerCent:80}
 	
-	//secondParticipant = Participant{ID:"part2",Name:"CITIBank",SharePerCent:20}
+	secondParticipant = Participant{ID:"part2",Name:"CitiBank",SharePerCent:20}
 
 	bytes, err1 := json.Marshal (&firstParticipant)
 	 if err1 != nil {
@@ -161,6 +162,19 @@ func CreateParticipants(stub shim.ChaincodeStubInterface,args []string)([]byte,e
 			return nil, err
 		}
 
+		
+	bytes2, err2 := json.Marshal (&secondParticipant)
+	 if err2 != nil {
+		         fmt.Println("Could not marshal secondParticipant object", err2)
+			         return nil, err2
+				  }
+
+	err3 := stub.PutState("part2", bytes2 )
+	if err3 != nil {
+			logger.Error("Could not save secondParticipant to ledger", err3)
+			return nil, err3
+		}
+				
 		return nil,nil
 
 }
@@ -188,11 +202,18 @@ func CreateLoanParticipation(stub shim.ChaincodeStubInterface, args []string) ([
 		return nil, err
 	}
     fmt.Println("CreateLoanParticipation : ParticipatedLoan ID and amount " + participatedLoan.ID, participatedLoan.DealAmount)
-    
+	
+	fmt.Println("CreateLoanParticipation : PropertyId " + participatedLoan.PropertyId)
+   
+    fmt.Println("CreateLoanParticipation:  All In Rate ", participatedLoan.AllInRate)
+	
+	fmt.Println("CreateLoanParticipation : baseRateType " + participatedLoan.BaseRateType)
+
 
 	loanbytes2, err := AppendToLoanList(stub,participatedLoan)
 	    
     err = ParticipateLoan(stub, "part1",loanApplicationId, participatedLoan.DealAmount)
+	err = ParticipateLoan(stub, "part2",loanApplicationId, participatedLoan.DealAmount)
 
 	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
 	err = stub.SetEvent("evtSender", []byte(customEvent))
@@ -245,7 +266,7 @@ func ParticipateLoan(stub shim.ChaincodeStubInterface, participant string, loan_
 	
 	partbytes, err := stub.GetState(participant)
 	if err != nil || partbytes == nil {
-		logger.Error("Could not fetch firstParticipant with id part1 from ledger", err)
+		logger.Error("Could not fetch firstParticipant from ledger", err)
 		return  err
 	}
 
@@ -256,11 +277,13 @@ func ParticipateLoan(stub shim.ChaincodeStubInterface, participant string, loan_
 	}
 	fmt.Println("ParticipateLoan: firstParticipant Name" + firstParticipant.Name)
 	fmt.Println("ParticipateLoan: participationAmount" ,participationAmount)
+		fmt.Println("ParticipateLoan: SharePerCent" ,firstParticipant.SharePerCent)
+	
 
 	var newAsset Asset
 	newAsset.AssetId = loan_id
-	newAsset.SharePerCent = 80
-	newAsset.ShareAmount = ( participationAmount * newAsset.SharePerCent / 100 )
+	//newAsset.SharePerCent = 80
+	newAsset.ShareAmount = ( participationAmount * firstParticipant.SharePerCent / 100 )
 	newAsset.SettlementFees = 0
 	
 	firstParticipant.AssetList = append(firstParticipant.AssetList, newAsset)
@@ -268,23 +291,12 @@ func ParticipateLoan(stub shim.ChaincodeStubInterface, participant string, loan_
 	fmt.Println("Total loans participated")
 	fmt.Println(len(firstParticipant.AssetList))
 	
-
-	/*for _, elem := range firstParticipant.AssetList {
-	fmt.Println("Participant Asset Details :" + elem.AssetId)
-	firstParticipant.AssetList[0].ShareAmount = ( participationAmount * elem.SharePerCent / 100 )
-	fmt.Println("elem.ShareAmount")
-	fmt.Println(firstParticipant.AssetList[0].ShareAmount)
-	}*/
- //firstParticipant.ShareAmount = loanApplicationInput.ApprovedAmount *  firstParticipant.SharePerCent
-
- //firstParticipant.ShareAmount = 1000 *  firstParticipant.SharePerCent
-
 	 partbytes2, err := json.Marshal (&firstParticipant)
 	 if err != nil {
         fmt.Println("Could not marshal firstParticipant info object", err)
         return err
 	 }
-	err = stub.PutState("part1", partbytes2)
+	err = stub.PutState(participant, partbytes2)
 	if err != nil {
 		return err
 	}
@@ -317,9 +329,13 @@ func SettleLoanSyndication(stub shim.ChaincodeStubInterface, args []string) ([]b
 
 	var participatedLoan LoanApplication
     err = json.Unmarshal(bytes,&participatedLoan)
-    fmt.Println("participatedLoan ID and amount " + participatedLoan.ID, participatedLoan.DealAmount)
+    fmt.Println("SettleLoanSyndication : participatedLoan ID and amount " + participatedLoan.ID, participatedLoan.DealAmount)
+	
+	fmt.Println("SettleLoanSyndication: All In Rate ", participatedLoan.AllInRate)
+	
+	fmt.Println("SettleLoanSyndication :  baseRateType " + participatedLoan.BaseRateType)
 
-	fmt.Println("updating outStandingSettlentAmount for ID for amount " + loanSettlementAmount)
+	fmt.Println("SettleLoanSyndication : updating outStandingSettlentAmount for ID for amount " + loanSettlementAmount)
 
 	//participatedLoan.OutStandingSettlementAmount = participatedLoan.ApprovedAmount - v
 	participatedLoan.OutStandingSettlementAmount = participatedLoan.OutStandingSettlementAmount - v
@@ -335,7 +351,7 @@ func SettleLoanSyndication(stub shim.ChaincodeStubInterface, args []string) ([]b
 		return nil, err
 	}
 
-	err = SettleParticipation(stub,"part1",loanApplicationId,v)
+	err = SettleParticipation(stub,"part1",loanApplicationId,participatedLoan.AllInRate,v)
 	
 	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
 	err = stub.SetEvent("evtSender", []byte(customEvent))
@@ -348,7 +364,7 @@ func SettleLoanSyndication(stub shim.ChaincodeStubInterface, args []string) ([]b
 return nil,nil
 }
 
-func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, loan_id string , settlementAmount int) (error){
+func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, loan_id string , allinRate int,  settlementAmount int) (error){
 	fmt.Println("Entering SettleParticipation")
 	partbytes, err := stub.GetState(participant)
 	if err != nil || partbytes == nil {
@@ -367,12 +383,13 @@ func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, l
 			fmt.Println("SettleParticipation:Participant Asset Details :" + firstParticipant.AssetList[i].AssetId)
 			fmt.Println("SettleParticipation:Index value is :" , i )
 			var settlementPortion int
-			settlementPortion = firstParticipant.AssetList[i].SharePerCent*settlementAmount/100
+			//settlementPortion = firstParticipant.AssetList[i].SharePerCent*settlementAmount/100
+			settlementPortion = firstParticipant.SharePerCent*settlementAmount/100
 			fmt.Println("SettleParticipation:settlementPortion Portion :", settlementPortion)
 			var orginalShareAmt int
 			orginalShareAmt = firstParticipant.AssetList[i].ShareAmount
 			fmt.Println("SettleParticipation:orginalShareAmt" , orginalShareAmt)
-			firstParticipant.AssetList[i].SettlementFees = firstParticipant.AssetList[i].SettlementFees + ((orginalShareAmt*30*10)/(100*365))
+			firstParticipant.AssetList[i].SettlementFees = firstParticipant.AssetList[i].SettlementFees + ((orginalShareAmt*30*allinRate)/(100*365))
 			firstParticipant.AssetList[i].ShareAmount = orginalShareAmt - settlementPortion
 			
 			fmt.Println("SettleParticipation:Update Participant ShareAmount")
