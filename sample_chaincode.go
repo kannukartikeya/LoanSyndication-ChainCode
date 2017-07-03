@@ -71,7 +71,7 @@ type Asset struct{
 	
 	ShareAmount            int 					 `json:"shareAmount"`
 	SyndicatedAmount 			 int					 `json:"syndicatedAmount"`
-	SettlementFees		   int                     `json:"settlementFees"`
+	SettlementFees		   float64                 `json:"settlementFees"`
 }
 
 
@@ -391,7 +391,7 @@ func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, l
 			var orginalShareAmt int
 			orginalShareAmt = firstParticipant.AssetList[i].ShareAmount
 			fmt.Println("SettleParticipation:orginalShareAmt" , orginalShareAmt)
-			firstParticipant.AssetList[i].SettlementFees = firstParticipant.AssetList[i].SettlementFees + ((orginalShareAmt*30*allinRate)/(100*365))
+			firstParticipant.AssetList[i].SettlementFees = firstParticipant.AssetList[i].SettlementFees + (float64(orginalShareAmt*30*allinRate)/(100*365))
 			firstParticipant.AssetList[i].ShareAmount = orginalShareAmt - settlementPortion
 			
 			fmt.Println("SettleParticipation:Update Participant ShareAmount")
