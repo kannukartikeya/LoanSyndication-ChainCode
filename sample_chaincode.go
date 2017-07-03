@@ -353,6 +353,8 @@ func SettleLoanSyndication(stub shim.ChaincodeStubInterface, args []string) ([]b
 
 	err = SettleParticipation(stub,"part1",loanApplicationId,participatedLoan.AllInRate,v)
 	
+	err = SettleParticipation(stub,"part2",loanApplicationId,participatedLoan.AllInRate,v)
+	
 	var customEvent = "{eventType: 'loanApplicationCreation', description:" + loanApplicationId + "' Successfully created'}"
 	err = stub.SetEvent("evtSender", []byte(customEvent))
 	if err != nil {
@@ -401,7 +403,7 @@ func SettleParticipation(stub shim.ChaincodeStubInterface, participant string, l
        fmt.Println("Could not marshal firstParticipant info object", err)
        return  err
 	 }
-	 err = stub.PutState("part1", partbytes2)
+	 err = stub.PutState(participant, partbytes2)
 	 if err != nil {
        fmt.Println("Could not put updated firstParticipant in world state", err)
        return  err
